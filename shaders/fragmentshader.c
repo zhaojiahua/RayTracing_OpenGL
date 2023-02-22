@@ -10,6 +10,9 @@ uniform vec2 screenResoution;//屏幕的分辨率
 uniform vec2 nearPlane;//相机近切面的三维空间尺寸(左下角放在(0,0,near)的位置,右上角是(nearPlane.x,nearPlane.y,near)的位置)
 uniform float near;
 
+const int SAMPLECOUNT = 100;
+uniform vec2[SAMPLECOUNT] sampleoffsets;//从CPU端传入100个0-1之间的随机数用于对单个像素的随机采样100次,然后求平均,从而达到抗锯齿的效果
+
 //构造一个射线类(传入射线的起点和方向)
 struct Ray
 {
@@ -112,7 +115,17 @@ void main()
 {
 	vec3 tempvec3 = vec3(fragUV.x * nearPlane.x, fragUV.y * nearPlane.y, -near);//获得了射线方向向量(注意相机朝向Z轴负方向)
 	tempvec3.x -= 0.5 * nearPlane.x; tempvec3.y -= 0.5 * nearPlane.y;//注意nearPlane是在大于0的UV空间,所以要移动到原点位置
-	Ray ray = GenRay(vec3(0.0), normalize(tempvec3));//c创建一个射线
-	vec3 tempresult = RayColor(ray);
+	float dx = 1.0 / float(screenResoution.x);
+	float dy = 1.0 / float(screenResoution.y);
+	//生成100条射线然后执行100次RayColor,最后求平均值
+	vec3 tempresult = vec3(0.0f);
+	for (int i = 0; i < SAMPLECOUNT; i++) {
+		vec3 temptempvec3 = tempvec3;
+		temptempvec3.x += sampleoffsets[i].x * dx; temptempvec3.y += sampleoffsets[i].y * dy;
+		Ray ray = GenRay(vec3(0.0), normalize(temptempvec3));//c创建一个射线
+		tempresult += RayColor(ray);
+	}
+	tempresult *= 0.01;
+
 	outColor = vec4(tempresult, 1.0);
 }

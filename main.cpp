@@ -36,6 +36,12 @@ int main()
 	Render* render1 = new Render();
 	Camera* camera1 = new Camera(0.1f, 100.0f, (GLfloat)(static_cast<GLfloat>(screenWidth) / static_cast<GLfloat>(screenHeigh)), 45.0f);
 
+	//生成100个随机数
+	glm::vec2 randoffsets[100];
+	for (int i = 0; i < 100; i++) {
+		randoffsets[i] = glm::vec2(Random_double(), Random_double());
+	}
+
 	glViewport(0, 0, viewWidht, viewHeight);
 	glClearColor(0.1f, 0.12f, 0.15f, 1.0f);
 	while (!glfwWindowShouldClose(mainWind)) {
@@ -48,6 +54,9 @@ int main()
 		shader1->SetVec2Uniform("screenResoution", glm::vec2(screenWidth, screenHeigh));
 		shader1->SetVec2Uniform("nearPlane", glm::vec2(camera1->mNearWidth, camera1->mNearHeight));
 		shader1->SetFloatUniform("near", camera1->mNear);
+		for (int i = 0; i < 100; i++) {
+			shader1->SetVec2Uniform("sampleoffsets[" + to_string(i) + "]", randoffsets[i]);
+		}
 		render1->Draw(mesh1);
 
 		glfwSwapBuffers(mainWind);//交换缓冲(这个很重要,不然windows不知道要用这个缓冲来覆盖窗口)
