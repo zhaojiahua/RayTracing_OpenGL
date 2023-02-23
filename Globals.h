@@ -13,6 +13,8 @@
 #include <random>
 #include <functional>
 
+#define PI 3.1415926535898
+
 using namespace std;
 
 //全局变量
@@ -30,9 +32,9 @@ void ZJH_KeyCallBack(GLFWwindow* inwind, int key, int scancode, int action, int 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) glfwSetWindowShouldClose(inwind, GL_TRUE);
 }
 
-//随机数生成函数
-double Random_double() {
-	static uniform_real_distribution<double> distribution(0.0, 0.5);
+//随机数生成函数(输入最小值和最大值的界定区间)
+double Random_double(float inmin,float inmax) {
+	static uniform_real_distribution<double> distribution(inmin, inmax);
 	static mt19937 generator;
 	static function<double()>rand_generator = bind(distribution, generator);
 	return rand_generator();

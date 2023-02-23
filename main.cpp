@@ -36,10 +36,10 @@ int main()
 	Render* render1 = new Render();
 	Camera* camera1 = new Camera(0.1f, 100.0f, (GLfloat)(static_cast<GLfloat>(screenWidth) / static_cast<GLfloat>(screenHeigh)), 45.0f);
 
-	//生成100个随机数
+	//生成100个2维随机数(用于反走样)
 	glm::vec2 randoffsets[100];
 	for (int i = 0; i < 100; i++) {
-		randoffsets[i] = glm::vec2(Random_double(), Random_double());
+		randoffsets[i] = glm::vec2(Random_double(0.0, 1.0), Random_double(0.0, 1.0));
 	}
 
 	glViewport(0, 0, viewWidht, viewHeight);
