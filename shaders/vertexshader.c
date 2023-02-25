@@ -13,7 +13,7 @@ uniform mat4 v_matrix;
 void main()
 {
 	fragPos = aPos;
-	gl_Position = p_matrix * v_matrix * vec4(aPos, 1.0);
+	gl_Position = vec4(aPos, 1.0);
 	fragUV = aUV;
 	fragNr = aNormal;
 }

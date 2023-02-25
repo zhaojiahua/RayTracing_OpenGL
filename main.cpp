@@ -18,23 +18,24 @@ int main()
 
 	//设置按键响应回调函数
 	glfwSetKeyCallback(mainWind,ZJH_KeyCallBack);
+	//设置鼠标滚动回调函数
+	glfwSetScrollCallback(mainWind, ZJH_ScrollCallBack);
 
 	//创建Mesh,Shader和Render,还有个Camera然后就可渲染了
 	GLfloat vertices[] = {
-			// pos	  normal		uv
-		-1.5f,1.0f, -1.0f,	0.0f,0.0f,1.0f,	0.0f,1.0f,
-		 1.5f,1.0f,  -1.0f,	0.0f,0.0f,1.0f,	1.0f,1.0f,
-		-1.5f,-1.0f,-1.0f,	0.0f,0.0f,1.0f,	0.0f,0.0f,
-		 1.5f,-1.0f, -1.0f,	0.0f,0.0f,1.0f,	1.0f,0.0f
+		// pos	  normal		uv
+	-1.5f,1.0f, -1.0f,	0.0f,0.0f,1.0f,	0.0f,1.0f,
+	 1.5f,1.0f,  -1.0f,	0.0f,0.0f,1.0f,	1.0f,1.0f,
+	-1.5f,-1.0f,-1.0f,	0.0f,0.0f,1.0f,	0.0f,0.0f,
+	 1.5f,-1.0f, -1.0f,	0.0f,0.0f,1.0f,	1.0f,0.0f
 	};
 	GLuint indices[] = {
 		2,1,0,	3,1,2
 	};
-
 	Mesh* mesh1 = new Mesh(vertices, sizeof(vertices), indices, sizeof(indices));
-	Shader* shader1 = new Shader("shaders/vertexshader.c","shaders/fragmentshader.c");
+	Shader* shader1 = new Shader("shaders/vertexshader.c", "shaders/fragmentshader.c");
 	Render* render1 = new Render();
-	Camera* camera1 = new Camera(0.1f, 100.0f, (GLfloat)(static_cast<GLfloat>(screenWidth) / static_cast<GLfloat>(screenHeigh)), 45.0f);
+	
 
 	//生成100个2维随机数(用于反走样)
 	glm::vec2 randoffsets[100];

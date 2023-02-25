@@ -176,8 +176,8 @@ vec3 RayColor(Ray ray,int limit) {
 	Materail[4] materials;//暂放4个材质,前2个是Lambert材质,后面两个是金属材质
 	materials[0].diffuse=vec3(0.7,0.3,0.3);
 	materials[0].metallic=1.0;
-	materials[0].roughness=0.1;
-	materials[0].reflectivity=0.9;
+	materials[0].roughness=0.2;
+	materials[0].reflectivity=0.5;
 	materials[0].refractive=1.5;
 	materials[0].refractive_damping=0.0;
 
@@ -189,16 +189,16 @@ vec3 RayColor(Ray ray,int limit) {
 	materials[1].refractive_damping=0.0;
 
 	materials[2].diffuse=vec3(0.8,0.6,0.2);
-	materials[2].metallic=1.0;
-	materials[2].roughness=0.1;
-	materials[2].reflectivity=0.6;
+	materials[2].metallic=0.0;
+	materials[2].roughness=0.3;
+	materials[2].reflectivity=0.2;
 	materials[2].refractive=0.8;
 	materials[2].refractive_damping=1.0;
 
 	materials[3].diffuse=vec3(0.7,0.7,0.9);
-	materials[3].metallic=1.0;
-	materials[3].roughness=0.1;
-	materials[3].reflectivity=0.6;
+	materials[3].metallic=0.0;
+	materials[3].roughness=1.0;
+	materials[3].reflectivity=0.2;
 	materials[3].refractive=0.6;
 	materials[3].refractive_damping=1.0;
 
@@ -225,10 +225,8 @@ vec3 RayColor(Ray ray,int limit) {
 	//反射方向跟踪
 	HitResult hitResult;
 	vec3 tempresult_reflect=tempresult;
-	vec3 tempresult_refract=tempresult;
 	Ray ray_reflect=ray;
 	Ray ray_refract=ray;
-	float refractInc=1.0;
 	//反射次数限制内反射检测
 	while (limit > 0)
 	{
@@ -236,27 +234,44 @@ vec3 RayColor(Ray ray,int limit) {
 		vec2 scope = vec2(0.001, 10000.0);//一开始给一个很大的碰撞检测范围(每次循环要更新)
 		bool hitAny=false;
 		for (int i = 0; i < world.hittableCount; i++) {
-			hitResult = GetHitPos(world.hittables[i], ray, scope);//注意这里在极短的时间里可能会与自己发生碰撞,所以scope一定要给值
+			hitResult = GetHitPos(world.hittables[i], ray_reflect, scope);//注意这里在极短的时间里可能会与自己发生碰撞,所以scope一定要给值
 			if(hitResult.hit && hitResult.hitFront){
 				hitAny=true;
 				scope.y=hitResult.hitT;//获得所有物体最近的击中点
 			}
 		}
 		if(!hitAny) break;//如果遍历了所有的物体后都没有击中物体就跳出循环
-		ray.origin = hitResult.hitPos;
-		//一定概率的发生反射或折射(发生反射的概率正好是物质的反射率)
-		if(rand()>hitResult.hitMat.reflectivity && hitResult.hitMat.metallic<0.01){//只要稍微有点金属度我们就不给它折射的机会
-			tempresult = (refractInc*hitResult.hitMat.diffuse);
-			refractInc*=(1.0-hitResult.hitMat.reflectivity);
-			ray.direction = hitResult.hitRefractDir;
-		}
-		else{
-			tempresult*= hitResult.hitMat.diffuse;
-			ray.direction = hitResult.hitReflectDir;
-		}
+		ray_reflect.origin = hitResult.hitPos;
+		tempresult_reflect *= (hitResult.hitMat.diffuse*hitResult.hitMat.reflectivity);
+		ray_reflect.direction = hitResult.hitReflectDir;
 	}
+	//折射方向跟踪
+	vec3 tempresult_refract=tempresult;
+	float refractInc=1.0;
+	while (limit > 0)
+	{
+		limit--;
+		vec2 scope = vec2(0.001, 10000.0);//一开始给一个很大的碰撞检测范围(每次循环要更新)
+		bool hitAny=false;
+		for (int i = 0; i < world.hittableCount; i++) {
+			hitResult = GetHitPos(world.hittables[i], ray_refract, scope);//注意这里在极短的时间里可能会与自己发生碰撞,所以scope一定要给值
+			if(hitResult.hit && hitResult.hitFront){
+				hitAny=true;
+				scope.y=hitResult.hitT;//获得所有物体最近的击中点
+			}
+		}
+		if(!hitAny) break;//如果遍历了所有的物体后都没有击中物体就跳出循环
+		if(hitResult.hitMat.metallic>0.01){
+			tempresult_refract=hitResult.hitMat.diffuse;
+			break;
+		}
+		ray_refract.origin = hitResult.hitPos;
+		refractInc *= (1.0-hitResult.hitMat.reflectivity);
+		ray_refract.direction = hitResult.hitRefractDir;
+	}
+	tempresult_refract*=refractInc;
 	
-	return tempresult;
+	return tempresult_refract;
 }
 
 void main()
