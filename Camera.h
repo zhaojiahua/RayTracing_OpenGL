@@ -15,6 +15,13 @@ public:
 	GLfloat mNear, mFar, mRatio, mFov;
 	//相机近切面的宽高
 	GLfloat mNearWidth, mNearHeight;
+	//屏幕空间尺寸也传进来
+	GLfloat mScreenWidth, mScreenHeight;
+	//相机移动的敏感度
+	GLfloat mSensitive = 0.001;
+	//相机的pitch和yaw值
+	GLfloat mPitch = 0.0, mYaw = 0.0;
+	GLboolean mFreeView = GL_FALSE;
 
 	//默认位置在原点
 	glm::vec3 mPosition = glm::vec3(0.0f);
@@ -29,5 +36,7 @@ public:
 
 	//更新相机(随着相机空间位置的变动其视图矩阵是实时变动的,还有运行的时候需要调节相机的某些属性参数,也需要实时更新)
 	void Updata();
+	//根据鼠标移动更新相机朝向
+	void SetCameraDir(GLfloat xoffset, GLfloat yoffset);
 };
 

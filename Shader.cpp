@@ -76,10 +76,22 @@ void Shader::SetFloatUniform(string inname, const GLfloat& inv)
 	glUniform1f(tempLocal, inv);
 }
 
+void Shader::SetIntUniform(string inname, const GLint& inv)
+{
+	GLint tempLocal = glGetUniformLocation(ID, inname.c_str());
+	glUniform1i(tempLocal, inv);
+}
+
 void Shader::SetVec2Uniform(string inname, const glm::vec2& inv)
 {
 	GLint tempLocal = glGetUniformLocation(ID, inname.c_str());
 	glUniform2f(tempLocal, inv[0], inv[1]);
+}
+
+void Shader::SetVec3Uniform(string inname, const glm::vec3& inv)
+{
+	GLint tempLocal = glGetUniformLocation(ID, inname.c_str());
+	glUniform3f(tempLocal, inv[0], inv[1], inv[2]);
 }
 
 void Shader::SetMat4Uniform(string inname, const glm::mat4& inmatrix)

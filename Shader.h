@@ -21,7 +21,9 @@ public:
 
 	void Use();
 	void SetFloatUniform(string inname, const GLfloat& inv);
+	void SetIntUniform(string inname, const GLint& inv);
 	void SetVec2Uniform(string inname, const glm::vec2& inv);
+	void SetVec3Uniform(string inname, const glm::vec3& inv);
 	void SetMat4Uniform(string inname, const glm::mat4& inmatrix);
 };
 

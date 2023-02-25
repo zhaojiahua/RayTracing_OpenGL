@@ -57,6 +57,7 @@ struct Materail
 	float refractive;//折射率(这个折射率指的是光线进入不同介质发生偏折的程度,人为规定空气折射率为1)
 	float refractive_damping;//这是由金属度和透明度决定的折射衰减率(一般金属会把折射的光线全部吸收掉,而带透明属性的非金属会吸收一部分折射光线,透过一部分光线,或者可以直接叫透明度)
 };
+uniform Materail[12] materials;
 
 //构造一个球类的父类(可被击中类)
 struct Hittable
@@ -64,14 +65,16 @@ struct Hittable
 	vec3 center;
 	float radius;
 	//每个物体还应该具有自己的材质属性
-	Materail mat;
+	int mat;
 };
 //一个World类里面存放N多个Hittable
 struct World
 {
 	int hittableCount;
-	Hittable hittables[20];//最大容量20个
+	Hittable hittables[50];//最大容量50个
 };
+//世界(world里面包含大量的小球,由CPU传入进来)
+uniform World world;
 
 //给定射线的起点和方向创建一个射线
 Ray GenRay(vec3 org,vec3 dir) {
@@ -96,11 +99,11 @@ struct HitResult
 	vec3 hitReflectDir;//击中的点的光线的反射方向
 	vec3 hitRefractDir;//击中点的光线的折射方向
 	bool hitFront;//是否从正面击中
-	Materail hitMat;//击中点的所属材质
+	int hitMat;//击中点的所属材质
 };
 
 //计算漫反射的方向
-vec3 RandReflectDirection(vec3 inDir,vec3 inN,Materail inmat){
+vec3 RandReflectDirection(vec3 inDir,vec3 inN,int inmat){
 	vec3 refDir=reflect(normalize(inDir),normalize(inN));//反射方向
 	vec2 randvec2=rand2();
 	randvec2.x*=(0.5*PI);
@@ -108,24 +111,24 @@ vec3 RandReflectDirection(vec3 inDir,vec3 inN,Materail inmat){
 	float theta=randvec2.x;
 	float phi=randvec2.y;
 	vec3 randDir=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta));
-	return normalize(refDir*inmat.metallic+randDir*(1.0-inmat.metallic)+randDir*inmat.roughness);//随机方向向反射方向收缩(收缩程度决定了高光强度,由不同的材质决定)
+	return normalize(refDir* materials[inmat].metallic+randDir*(1.0- materials[inmat].metallic)+randDir* materials[inmat].roughness);//随机方向向反射方向收缩(收缩程度决定了高光强度,由不同的材质决定)
 	//return randDir;
 	//return refDir;
 }
 //计算折射方向
-vec3 GetRefractDirection(vec3 inDir,vec3 inN,Materail inmat){
+vec3 GetRefractDirection(vec3 inDir,vec3 inN,int inmat){
 	float cos_theta=dot(-inDir,inN);
-	vec3 r_out_parallel=inmat.refractive*(inDir+cos_theta*inN);
+	vec3 r_out_parallel= materials[inmat].refractive * (inDir + cos_theta * inN);
 	vec3 r_out_perp=-sqrt(1.0-length(r_out_parallel)*length(r_out_parallel))*inN;
 	return r_out_parallel+r_out_perp;//折射方向
 };
-vec3 GetRefractDirectionBF(vec3 inDir,vec3 inN,Materail inmat){
+vec3 GetRefractDirectionBF(vec3 inDir,vec3 inN,int inmat){
 	vec3 v=normalize(inDir);
 	vec3 n=normalize(inN);
 	float dt=dot(v,n);
-	float discriminant=1.0-inmat.refractive*inmat.refractive*(1.0-dt*dt);
+	float discriminant=1.0- materials[inmat].refractive* materials[inmat].refractive*(1.0-dt*dt);
 	if(discriminant>0.0){
-		return inmat.refractive*(v-n*dt)-n*sqrt(discriminant);
+		return materials[inmat].refractive*(v-n*dt)-n*sqrt(discriminant);
 	}
 	else return vec3(0.0);
 };
@@ -172,51 +175,6 @@ HitResult GetHitPos(Hittable object,Ray ray,vec2 scope) {
 
 //根据射线渲染颜色(传进来一个射线和反弹次数限制)
 vec3 RayColor(Ray ray,int limit) {
-	//我们把不同属性的材质放到一个数组里面以便给每个物体附值(因为可能有多个物体共用同一个材质)
-	Materail[4] materials;//暂放4个材质,前2个是Lambert材质,后面两个是金属材质
-	materials[0].diffuse=vec3(0.7,0.3,0.3);
-	materials[0].metallic=1.0;
-	materials[0].roughness=0.1;
-	materials[0].reflectivity=0.9;
-	materials[0].refractive=1.5;
-	materials[0].refractive_damping=0.0;
-
-	materials[1].diffuse=vec3(0.8,0.8,0.1);
-	materials[1].metallic=1.0;
-	materials[1].roughness=1.0;
-	materials[1].reflectivity=0.5;
-	materials[1].refractive=1.5;
-	materials[1].refractive_damping=0.0;
-
-	materials[2].diffuse=vec3(0.8,0.6,0.2);
-	materials[2].metallic=1.0;
-	materials[2].roughness=0.1;
-	materials[2].reflectivity=0.6;
-	materials[2].refractive=0.8;
-	materials[2].refractive_damping=1.0;
-
-	materials[3].diffuse=vec3(0.7,0.7,0.9);
-	materials[3].metallic=1.0;
-	materials[3].roughness=0.1;
-	materials[3].reflectivity=0.6;
-	materials[3].refractive=0.6;
-	materials[3].refractive_damping=1.0;
-
-	//世界
-	World world;
-	world.hittableCount = 4;
-	world.hittables[0].center = vec3(0.0, 0.0, -3.0);
-	world.hittables[0].radius = 0.5;
-	world.hittables[0].mat=materials[0];
-	world.hittables[1].center = vec3(0.0, -100.5, -3.0);
-	world.hittables[1].radius = 100.0;
-	world.hittables[1].mat=materials[1];
-	world.hittables[2].center = vec3(0.95, -0.1, -3.0);
-	world.hittables[2].radius = 0.4;
-	world.hittables[2].mat=materials[2];
-	world.hittables[3].center = vec3(-0.95, -0.1, -3.0);
-	world.hittables[3].radius = 0.4;
-	world.hittables[3].mat=materials[3];
 
 	//环境光(没有碰撞到任何物体时候的颜色)
 	float t = ray.direction.y * 0.5 + 0.5;//把方向向量的y轴映射到0.0-1.0之间
@@ -245,17 +203,16 @@ vec3 RayColor(Ray ray,int limit) {
 		if(!hitAny) break;//如果遍历了所有的物体后都没有击中物体就跳出循环
 		ray.origin = hitResult.hitPos;
 		//一定概率的发生反射或折射(发生反射的概率正好是物质的反射率)
-		if(rand()>hitResult.hitMat.reflectivity && hitResult.hitMat.metallic<0.01){//只要稍微有点金属度我们就不给它折射的机会
-			tempresult = (refractInc*hitResult.hitMat.diffuse);
-			refractInc*=(1.0-hitResult.hitMat.reflectivity);
+		if(rand()>materials[hitResult.hitMat].reflectivity && materials[hitResult.hitMat].metallic<0.01){//只要稍微有点金属度我们就不给它折射的机会
+			tempresult = (refractInc* materials[hitResult.hitMat].diffuse);
+			refractInc*=(1.0- materials[hitResult.hitMat].reflectivity);
 			ray.direction = hitResult.hitRefractDir;
 		}
 		else{
-			tempresult*= hitResult.hitMat.diffuse;
+			tempresult*= materials[hitResult.hitMat].diffuse;
 			ray.direction = hitResult.hitReflectDir;
 		}
 	}
-	
 	return tempresult;
 }
 

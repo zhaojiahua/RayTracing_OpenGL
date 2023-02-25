@@ -16,3 +16,16 @@ void Camera::Updata()
 	mViewMatrix = glm::lookAt(mPosition, mPosition + mDirection, mUp);
 	mPerspectiveMatrix = glm::perspective(mFov, mRatio, mNear, mFar);
 }
+
+void Camera::SetCameraDir(GLfloat xoffset, GLfloat yoffset)
+{
+	mYaw += (xoffset / mScreenWidth * 90.0);
+	mPitch += (yoffset / mScreenHeight * 90.0);
+	if (mPitch > 90.0)mPitch = 90.0;
+	if (mPitch < -90.0)mPitch = -90.0;
+
+	GLfloat x = cos(mPitch) * cos(mYaw);
+	GLfloat y = cos(mPitch) * sin(mYaw);
+	GLfloat z = sin(mPitch);
+	mDirection = glm::vec3(x, y, z);
+}
