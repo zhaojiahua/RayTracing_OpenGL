@@ -19,11 +19,11 @@ int main()
 	//设置按键响应回调函数
 	glfwSetKeyCallback(mainWind,ZJH_KeyCallBack);
 	//设置鼠标滚动回调函数
-	glfwSetScrollCallback(mainWind, ZJH_ScrollCallBack);
+	//glfwSetScrollCallback(mainWind, ZJH_ScrollCallBack);
 	//设置鼠标按键响应回调函数
-	glfwSetMouseButtonCallback(mainWind, ZJH_MouseButtonCallBack);
+	//glfwSetMouseButtonCallback(mainWind, ZJH_MouseButtonCallBack);
 	//设置鼠标移动回调函数
-	glfwSetCursorPosCallback(mainWind, ZJH_MouseMoveCallBack);
+	//glfwSetCursorPosCallback(mainWind, ZJH_MouseMoveCallBack);
 
 	//创建Mesh,Shader和Render,还有个Camera然后就可渲染了
 	GLfloat vertices[] = {
@@ -44,17 +44,16 @@ int main()
 	Mesh* mesh1 = new Mesh(vertices, sizeof(vertices), indices, sizeof(indices));
 	Shader* shader1 = new Shader("shaders/vertexshader.c", "shaders/fragmentshader.c");
 	Render* render1 = new Render();
-	vector<vector<float>>spheres = ReadFile("assets/spheres.txt", 5);
+	//vector<vector<float>>spheres = ReadFile("assets/spheres.txt", 5);
 	vector<vector<float>>materials = ReadFile("assets/materials.txt", 8);
 	shader1->Use();
+	shader1->SetMat4Uniform("p_matrix", camera1->mPerspectiveMatrix);
+	shader1->SetMat4Uniform("v_matrix", camera1->mViewMatrix);
+	shader1->SetVec2Uniform("screenResoution", glm::vec2(screenWidth, screenHeigh));
+	shader1->SetVec2Uniform("nearPlane", glm::vec2(camera1->mNearWidth, camera1->mNearHeight));
+	shader1->SetFloatUniform("near", camera1->mNear);
 	for (int i = 0; i < 100; i++) {
 		shader1->SetVec2Uniform("sampleoffsets[" + to_string(i) + "]", randoffsets[i]);
-	}
-	shader1->SetIntUniform("world.hittableCount", spheres.size());
-	for (int i = 0; i < spheres.size(); i++) {
-		shader1->SetVec3Uniform("world.hittables[" + to_string(i) + "].center", glm::vec3(spheres[i][0], spheres[i][1], spheres[i][2]));
-		shader1->SetFloatUniform("world.hittables[" + to_string(i) + "].radius", spheres[i][3]);
-		shader1->SetIntUniform("world.hittables[" + to_string(i) + "].mat", (GLint)spheres[i][4]);
 	}
 	for (int i = 0; i < materials.size(); i++) {
 		shader1->SetVec3Uniform("materials[" + to_string(i) + "].diffuse", glm::vec3(materials[i][0], materials[i][1], materials[i][2]));
@@ -64,23 +63,41 @@ int main()
 		shader1->SetFloatUniform("materials[" + to_string(i) + "].refractive", materials[i][6]);
 		shader1->SetFloatUniform("materials[" + to_string(i) + "].refractive_damping", materials[i][7]);
 	}
-
 	glViewport(0, 0, viewWidht, viewHeight);
 	glClearColor(0.1f, 0.12f, 0.15f, 1.0f);
-	while (!glfwWindowShouldClose(mainWind)) {
-		glfwPollEvents();//只处理已经在消息队列中的消息并立即返回结果
-		
+	vector<float> ground = { 0.0, -100.2, 0.0, 100, 1 };
+	int i = 60;//从第20张渲起
+	while (i<160)
+	{
+		i++;
+		string jsonname = "others/spheres_";
+		vector<vector<float>>spheres = ReadJson(jsonname + to_string(i) + ".json");
+		spheres.push_back(ground);
+		shader1->Use();
+		shader1->SetIntUniform("world.hittableCount", spheres.size());
+		for (int i = 0; i < spheres.size(); i++) {
+			shader1->SetVec3Uniform("world.hittables[" + to_string(i) + "].center", glm::vec3(spheres[i][0], spheres[i][1], spheres[i][2]));
+			shader1->SetFloatUniform("world.hittables[" + to_string(i) + "].radius", spheres[i][3]);
+			shader1->SetIntUniform("world.hittables[" + to_string(i) + "].mat", (GLint)spheres[i][4]);
+		}
+		//while (!glfwWindowShouldClose(mainWind)) {
+		//	glfwPollEvents();//只处理已经在消息队列中的消息并立即返回结果
+		//}
 		glClear(GL_COLOR_BUFFER_BIT);
 		shader1->Use();
-		shader1->SetMat4Uniform("p_matrix", camera1->mPerspectiveMatrix);
-		shader1->SetMat4Uniform("v_matrix", camera1->mViewMatrix);
-		shader1->SetVec2Uniform("screenResoution", glm::vec2(screenWidth, screenHeigh));
-		shader1->SetVec2Uniform("nearPlane", glm::vec2(camera1->mNearWidth, camera1->mNearHeight));
-		shader1->SetFloatUniform("near", camera1->mNear);
 		render1->Draw(mesh1);
 
-		glfwSwapBuffers(mainWind);//交换缓冲(这个很重要,不然windows不知道要用这个缓冲来覆盖窗口)
+		cv::Mat imgData(viewHeight, viewWidht, CV_8UC3);
+		glPixelStorei(GL_PACK_ALIGNMENT, (imgData.step & 3) ? 1 : 4);
+		glPixelStorei(GL_PACK_ROW_LENGTH, imgData.step / imgData.elemSize());
+		glReadPixels(0, 0, imgData.cols, imgData.rows, GL_BGR, GL_UNSIGNED_BYTE, imgData.data);
+		cv::Mat flipped;
+		cv::flip(imgData, flipped, 0);
+		string outPicname = "outimgs/sphere_";
+		cv::imwrite(outPicname + to_string(i) + ".png", flipped);
 	}
+	
+	//glfwSwapBuffers(mainWind);//交换缓冲(这个很重要,不然windows不知道要用这个缓冲来覆盖窗口)
 
 	delete(mesh1);
 	delete(shader1);
