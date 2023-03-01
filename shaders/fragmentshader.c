@@ -10,6 +10,7 @@ out vec4 outColor;
 uniform vec2 screenResoution;//屏幕的分辨率
 uniform vec2 nearPlane;//相机近切面的三维空间尺寸(左下角放在(0,0,near)的位置,右上角是(nearPlane.x,nearPlane.y,near)的位置)
 uniform float near;
+uniform mat4 viewM;//相机视图矩阵
 
 const int SAMPLECOUNT = 100;
 const int RAYLIMIT = 50;
@@ -57,7 +58,7 @@ struct Materail
 	float refractive;//折射率(这个折射率指的是光线进入不同介质发生偏折的程度,人为规定空气折射率为1)
 	float refractive_damping;//这是由金属度和透明度决定的折射衰减率(一般金属会把折射的光线全部吸收掉,而带透明属性的非金属会吸收一部分折射光线,透过一部分光线,或者可以直接叫透明度)
 };
-uniform Materail[12] materials;
+uniform Materail[12] materials;//12中材质
 
 //构造一个球类的父类(可被击中类)
 struct Hittable
@@ -71,7 +72,7 @@ struct Hittable
 struct World
 {
 	int hittableCount;
-	Hittable hittables[50];//最大容量50个
+	Hittable hittables[150];//最大容量150个
 };
 //世界(world里面包含大量的小球,由CPU传入进来)
 uniform World world;
@@ -112,8 +113,6 @@ vec3 RandReflectDirection(vec3 inDir,vec3 inN,int inmat){
 	float phi=randvec2.y;
 	vec3 randDir=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta));
 	return normalize(refDir* materials[inmat].metallic+randDir*(1.0- materials[inmat].metallic)+randDir* materials[inmat].roughness);//随机方向向反射方向收缩(收缩程度决定了高光强度,由不同的材质决定)
-	//return randDir;
-	//return refDir;
 }
 //计算折射方向
 vec3 GetRefractDirection(vec3 inDir,vec3 inN,int inmat){
@@ -135,6 +134,7 @@ vec3 GetRefractDirectionBF(vec3 inDir,vec3 inN,int inmat){
 
 //判断射线ray是否击中圆心为center半径为radius的小球(另外再加入一对最近击中距离和最远击中距离,超出这个范围的默认无碰撞)
 HitResult GetHitPos(Hittable object,Ray ray,vec2 scope) {
+	object.center = (viewM * vec4(object.center, 1.0)).rgb;//为了配合相机的变动,这里需要对object的位置进行视图矩阵变换
 	HitResult hitresult;
 	vec3 a_c = ray.origin - object.center;
 	float a = dot(ray.direction, ray.direction);
@@ -227,7 +227,7 @@ void main()
 	for (int i = 0; i < SAMPLECOUNT; i++) {
 		vec3 temptempvec3 = tempvec3;
 		temptempvec3.x += sampleoffsets[i].x * dx; temptempvec3.y += sampleoffsets[i].y * dy;
-		Ray ray = GenRay(vec3(0.0), normalize(temptempvec3));//c创建一个射线
+		Ray ray = GenRay(vec3(0.0), normalize(temptempvec3));//创建一个射线
 		tempresult += RayColor(ray, RAYLIMIT);//限制50次反弹
 	}
 	tempresult *= 0.01;
