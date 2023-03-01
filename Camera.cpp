@@ -13,7 +13,7 @@ Camera::Camera(GLfloat near, GLfloat far, GLfloat ratio, GLfloat fov) :mNear(nea
 
 void Camera::Updata()
 {
-	mViewMatrix = glm::lookAt(mPosition, mPosition + mDirection, mUp);
+	mViewMatrix = glm::lookAt(mPosition, glm::vec3(0.0f), mUp);
 	mPerspectiveMatrix = glm::perspective(mFov, mRatio, mNear, mFar);
 }
 

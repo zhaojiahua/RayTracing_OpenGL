@@ -66,15 +66,19 @@ int main()
 	glViewport(0, 0, viewWidht, viewHeight);
 	glClearColor(0.1f, 0.12f, 0.15f, 1.0f);
 	vector<float> ground = { 0.0, -100.2, 0.0, 100, 1 };
-	int i = 60;//从第20张渲起
-	while (i<160)
+	float j = 360.0f;
+	int i = 20;
+	while (i<60)
 	{
 		i++;
+		camera1->mPosition = glm::vec3(1 + 0.01 * (i - 280) * sin(i * 0.00277778), 0.3f, 1 + 0.01 * (i - 280) * cos(i * 0.00277778));
+		camera1->Updata();
 		string jsonname = "others/spheres_";
 		vector<vector<float>>spheres = ReadJson(jsonname + to_string(i) + ".json");
 		spheres.push_back(ground);
 		shader1->Use();
 		shader1->SetIntUniform("world.hittableCount", spheres.size());
+		shader1->SetMat4Uniform("viewM", camera1->mViewMatrix);
 		for (int i = 0; i < spheres.size(); i++) {
 			shader1->SetVec3Uniform("world.hittables[" + to_string(i) + "].center", glm::vec3(spheres[i][0], spheres[i][1], spheres[i][2]));
 			shader1->SetFloatUniform("world.hittables[" + to_string(i) + "].radius", spheres[i][3]);

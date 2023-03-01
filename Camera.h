@@ -24,7 +24,7 @@ public:
 	GLboolean mFreeView = GL_FALSE;
 
 	//默认位置在原点
-	glm::vec3 mPosition = glm::vec3(0.0f);
+	glm::vec3 mPosition = glm::vec3(0.0f, 0.0f, 1.0f);
 	//默认朝向z轴负方向
 	glm::vec3 mDirection = glm::vec3(0.0f, 0.0f, -1.0f);
 	//上方向(固定相机上方向)
